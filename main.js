@@ -1,4 +1,6 @@
 const $display = document.querySelector("#display");
+const $topDisplay = document.querySelector("#top-display");
+const $bottomDisplay = document.querySelector("#bottom-display");
 const $operators = document.querySelectorAll(".operator");
 const $numberButtons = document.querySelectorAll(".number");
 const $equalButton = document.querySelector("#equal-button");
@@ -14,40 +16,59 @@ const operations = {
   divide: (a, b) => a / b,
 };
 
-let displayedNumber = [];
+let topDisplayedArr = [];
+let bottomDisplayedArr = [];
 let firstNumber = "";
 let operator = "";
 let secondNumber = "";
 
 $numberButtons.forEach((button) =>
   button.addEventListener("click", () => {
+    if (bottomDisplayedArr[10]) {
+      return;
+    }
     ConcatenateNumber(button.innerText);
-    actualizeDisplay();
+    actualizeBottomDisplay();
   })
 );
 
 $operators.forEach((currentOperator) =>
   currentOperator.addEventListener("click", () => {
-    if (currentOperator.id === "substract" && !displayedNumber[0]) {
+    if (currentOperator.id === "substract" && !bottomDisplayedArr[0]) {
       handleNegativeSign();
       return;
     }
+
+    if (bottomDisplayedArr[0] == "-" && !bottomDisplayedArr[1]) {
+      return;
+    }
+
+    if (operator) {
+      $operators.forEach((a) => {
+        a.classList.remove("pressed");
+      });
+    }
+
+    currentOperator.classList.add("pressed");
+    operator = currentOperator.id;
+
     if (!firstNumber) {
-      firstNumber = $display.innerText;
-      operator = currentOperator.id;
-      cleanDisplay();
+      firstNumber = $bottomDisplay.innerText;
+      updateTopDisplay();
+      cleanBottomDisplay();
       enableDecimal();
       return;
     }
     if (firstNumber) {
       $equalButton.click();
+      currentOperator.classList.add("pressed");
       operator = currentOperator.id;
     }
   })
 );
 
 $equalButton.addEventListener("click", () => {
-  secondNumber = $display.innerText;
+  secondNumber = $bottomDisplay.innerText;
   if (!firstNumber || !secondNumber || !operator) {
     return;
   }
@@ -55,15 +76,31 @@ $equalButton.addEventListener("click", () => {
     operate(firstNumber, operator, secondNumber).toFixed(4)
   );
 
-  displayedNumber = Array.from(String(solution));
+  if (operator === "divide" && secondNumber === "0") {
+    $topDisplay.innerText = "):";
+    $bottomDisplay.innerText = ":(";
 
-  firstNumber = displayedNumber;
+    return;
+  }
 
-  actualizeDisplay();
+  topDisplayedArr = Array.from(String(solution));
+
+  firstNumber = solution;
+
+  actualizeTopDisplay();
+  actualizeBottomDisplay();
+
+  $operators.forEach((a) => {
+    a.classList.remove("pressed");
+  });
 
   operator = "";
 
   secondNumber = "";
+
+  $bottomDisplay.innerText = "";
+
+  bottomDisplayedArr = [];
 
   enableDecimal();
 });
@@ -74,12 +111,13 @@ $decimalButton.addEventListener("click", () => {
 
 $acButton.addEventListener("click", () => {
   resetCalculator();
-  actualizeDisplay();
+  actualizeTopDisplay();
+  actualizeBottomDisplay();
 });
 
 $deleteButton.addEventListener("click", () => {
-  displayedNumber.pop();
-  actualizeDisplay();
+  bottomDisplayedArr.pop();
+  actualizeBottomDisplay();
 });
 
 function operate(a, operator, b) {
@@ -87,11 +125,15 @@ function operate(a, operator, b) {
 }
 
 function ConcatenateNumber(number) {
-  displayedNumber.push(number);
+  bottomDisplayedArr.push(number);
 }
 
-function actualizeDisplay() {
-  $display.innerText = displayedNumber.join("");
+function actualizeBottomDisplay() {
+  $bottomDisplay.innerText = bottomDisplayedArr.join("");
+}
+
+function actualizeTopDisplay() {
+  $topDisplay.innerText = topDisplayedArr.join("");
 }
 
 function disableDecimal() {
@@ -103,24 +145,41 @@ function enableDecimal() {
 }
 
 function resetCalculator() {
-  displayedNumber = [];
+  topDisplayedArr = [];
+
+  bottomDisplayedArr = [];
 
   firstNumber = "";
 
   secondNumber = "";
 
   operator = "";
+
+  $operators.forEach((a) => {
+    a.classList.remove("pressed");
+  });
+
+  enableDecimal();
 }
 
 function handleNegativeSign() {
-  if ($display.innerText === "-") {
+  if ($bottomDisplay.innerText === "-") {
     return;
   }
-  displayedNumber.push("-");
-  actualizeDisplay();
+  bottomDisplayedArr.push("-");
+  actualizeBottomDisplay();
   return;
 }
 
-function cleanDisplay() {
-  displayedNumber = [];
+function cleanBottomDisplay() {
+  bottomDisplayedArr = [];
+  $bottomDisplay.innerText = [];
+}
+
+function cleanTopDisplay() {
+  topDisplayedArr = [];
+}
+
+function updateTopDisplay() {
+  $topDisplay.innerText = firstNumber;
 }
